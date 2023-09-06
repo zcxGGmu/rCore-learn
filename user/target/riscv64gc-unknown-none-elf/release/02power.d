@@ -1,0 +1,1 @@
+/home/ubuntu/obj/rCore/user/target/riscv64gc-unknown-none-elf/release/02power: /home/ubuntu/obj/rCore/user/src/bin/02power.rs /home/ubuntu/obj/rCore/user/src/console.rs /home/ubuntu/obj/rCore/user/src/lang_items.rs /home/ubuntu/obj/rCore/user/src/lib.rs /home/ubuntu/obj/rCore/user/src/syscall.rs
