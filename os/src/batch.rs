@@ -1,8 +1,8 @@
 //! batch subsystem
-
 use crate::sync::UPSafeCell;
 use core::arch::asm;
 use lazy_static::*;
+use crate::trap::TrapContext;
 
 const MAX_APP_NUM: usize = 16;
 const APP_BASE_ADDRESS: usize = 0x80400000;
@@ -26,7 +26,7 @@ impl UserStack {
     }
 }
 
-impl KerelStack {
+impl KernelStack {
     fn get_sp(&self) -> usize {
         self.data.as_ptr() as usize + KERNEL_STACK_SIZE
     }
@@ -45,7 +45,7 @@ static USER_STACK: UserStack = UserStack { data: [0; USER_STACK_SIZE] };
 
 struct AppManager {
    num_app: usize,
-   current_app, usize,
+   current_app: usize,
    app_start: [usize; MAX_APP_NUM + 1],
 }
 
@@ -54,7 +54,7 @@ impl AppManager {
         self.current_app
     }
 
-    pub fn move_to_next_app(&self) {
+    pub fn move_to_next_app(&mut self) {
         self.current_app += 1;
     }
 
@@ -62,7 +62,7 @@ impl AppManager {
         println!("[kernel] num_app = {}", self.num_app);
         for i in 0..self.num_app {
            println!(
-               "[kernel] app_{} [:#x], {:#x}",
+               "[kernel] app_{} [{:#x}, {:#x})",
                i,
                self.app_start[i],
                self.app_start[i + 1]
@@ -70,7 +70,7 @@ impl AppManager {
         }
     }
 
-    fn load_app(&self, app_id: usize) {
+    unsafe fn load_app(&self, app_id: usize) {
         if app_id >= self.num_app {
             panic!("All applications completed!");
         }
@@ -78,10 +78,10 @@ impl AppManager {
         
         //clear app area
         core::slice::from_raw_parts_mut(
-            APP_BASE_ADDRESS as *mut u8;
+            APP_BASE_ADDRESS as *mut u8,
             APP_SIZE_LIMIT
         ).fill(0);
-        let app_src = core::slice:;from_raw_parts(
+        let app_src = core::slice::from_raw_parts(
             self.app_start[app_id] as *const u8,
             self.app_start[app_id + 1] - self.app_start[app_id]
         );
@@ -89,7 +89,7 @@ impl AppManager {
             APP_BASE_ADDRESS as *mut u8,
             app_src.len()
         );
-        app_dst.copys_from_slice(app_src);
+        app_dst.copy_from_slice(app_src);
 
         // memory fence about fetching the instruction memory
         asm!("fence.i");
@@ -100,10 +100,10 @@ lazy_static! {
     static ref APP_MANAGER: UPSafeCell<AppManager> = unsafe {
         UPSafeCell::new(
             {
-                extern "C" {i
+                extern "C" {
                     fn _num_app();
                 }
-                let num_app_ptr = _unm_app as usize as *const usize;
+                let num_app_ptr = _num_app as usize as *const usize;
                 let num_app = num_app_ptr.read_volatile();
                 let mut app_start: [usize; MAX_APP_NUM + 1] = [0; MAX_APP_NUM + 1];
                 let app_start_raw: &[usize] = 

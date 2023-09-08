@@ -9,7 +9,7 @@ use riscv::register::{
 };
 use crate::batch::run_next_app;
 use crate::syscall::syscall;
-pub use context::TrapContext;
+use log::{*};
 
 global_asm!(include_str!("trap.S"));
 
@@ -43,8 +43,11 @@ pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
             panic!(
                 "Current rCore unsupported trap {:?}, stval = {:#x}",
                 scause.cause(),
-                stval);
+                stval
+            );
         }
     }
     cx
 }
+
+pub use context::TrapContext;

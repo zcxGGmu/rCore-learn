@@ -18,8 +18,8 @@ impl TrapContext {
         let mut cx = Self {
             x: [0; 32],
             sstatus,
-            spec, entry,
-        }
+            sepc: entry,
+        };
         cx.set_sp(sp);
         cx
     }

@@ -1,6 +1,5 @@
-//! Uniprocessor interior mutability primitives
-
-use core::cell::{RefCell, RefMut}
+// Uniprocessor interior mutability primitives
+use core::cell::{RefCell, RefMut};
 
 pub struct UPSafeCell<T> {
     inner: RefCell<T>,

@@ -1,5 +1,4 @@
-use core::fmt;
-use crate::console;
+// use crate::console;
 use log::{self, Level, LevelFilter, Log, Metadata, Record};
 
 struct Logger;
@@ -15,7 +14,7 @@ impl Log for Logger {
 
         print!("\x1b[{}m", log_level_to_color_code(record.level()));
         println!("[{}] {}", record.level(), record.args());
-        print!("\x1b[0m")
+        print!("\x1b[0m");
     }
 
     fn flush(&self) {}

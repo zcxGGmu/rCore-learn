@@ -1,4 +1,4 @@
-use std::fd::{read_dir, File};
+use std::fs::{read_dir, File};
 use std::io::{Result, Write};
 
 fn main() {
@@ -16,7 +16,7 @@ fn insert_app_data() -> Result<()> {
        .into_iter()
        .map(|dir_entry| {
            let mut name_with_ext = dir_entry.unwrap().file_name().into_string().unwrap();
-           name_with_ext.drain(name_with_ext.find(".").unwrap..name_with_ext.len());
+           name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
            name_with_ext
        })
        .collect();
@@ -30,7 +30,7 @@ fn insert_app_data() -> Result<()> {
     .global _num_app
 _num_app:
     .quad {}"#,
-        apps.len)?;
+        apps.len())?;
 
     for i in 0..apps.len() {
         writeln!(f,
