@@ -43,5 +43,5 @@ pub fn init() {
        _ => LevelFilter::Off,
    });
    
-   //log::set_max_level(LevelFilter::Info);
+   log::set_max_level(LevelFilter::Info);
 }

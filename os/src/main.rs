@@ -5,14 +5,15 @@
 
 #[macro_use]
 mod console;
+
 pub mod batch;
 mod lang_items;
 mod sbi;
 mod sync;
-mod logging;
+//mod logging;
 pub mod syscall;
 pub mod trap;
-
+mod logging;
 use core::arch::global_asm;
 use log::{*};
 
