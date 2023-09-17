@@ -36,8 +36,7 @@ __alltraps:
 	mv a0, sp
 	call trap_handler
 
-__restore:
-	
+__restore:	
 	# case1: trap_handler return
 	# case2: run_next_app():first run app/continue run next app
 	
