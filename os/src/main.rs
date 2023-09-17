@@ -1,21 +1,27 @@
-#![feature(panic_info_message)]
+//! The main module and as real kernel entrypoint
+
+#![feature(panic_info_imessage)]
 #![no_main]
 #![no_std]
 #![deny(warnings)]
+#![deny(missing_docs)]
 
+use core::arch::global_asm;
+use log::{*}
+
+mod board;
 #[macro_use]
 mod console;
-
-pub mod batch;
+mod logging;
+mod config;
 mod lang_items;
 mod sbi;
 mod sync;
-//mod logging;
+mod loader;
+mod timer;
 pub mod syscall;
 pub mod trap;
-mod logging;
-use core::arch::global_asm;
-use log::{*};
+pub mod task;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
@@ -40,7 +46,9 @@ pub fn rust_main() -> ! {
     info!("[kernel] Hello, rCore!");
     
     trap::init();
-    batch::init();
-    
-    batch::run_next_app();
+    loader::load_apps();
+    trap::enable_timer_interrupt();
+    timer::set_next_trigger();
+    task::run_first_task();
+    panic!("Unreachable in rust_main!");
 }
