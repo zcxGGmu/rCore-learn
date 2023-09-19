@@ -37,10 +37,9 @@ __alltraps:
 	call trap_handler
 
 __restore:	
-	# case1: trap_handler return
-	# case2: run_next_app():first run app/continue run next app
+	# case1: trap_handler return to user
+	# case2: run_next_task():first run task/continue run next task
 	
-	mv sp, a0;
 	# first restore CSRs, because next we will restore t0/t1/t2
 	ld t0, 32*8(sp)
 	ld t1, 33*8(sp)
