@@ -1,15 +1,17 @@
 //! The main module and as real kernel entrypoint
 
-#![feature(panic_info_imessage)]
+#![feature(panic_info_message)]
 #![no_main]
 #![no_std]
 #![deny(warnings)]
-#![deny(missing_docs)]
 
 use core::arch::global_asm;
-use log::{*}
+use log::{*};
 
+#[cfg(feature = "board_qemu")]
+#[path = "boards/qemu.rs"]
 mod board;
+
 #[macro_use]
 mod console;
 mod logging;

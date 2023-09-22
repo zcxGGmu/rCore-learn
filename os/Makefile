@@ -37,6 +37,9 @@ kernel:
 	@echo Platform: $(BOARD)
 	@cargo build $(MODE_ARG) --features "board_$(BOARD)"
 
+clean:
+	@cargo clean
+
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
 	
@@ -66,4 +69,3 @@ gdbclient:
 		@riscv64-unknown-elf-gdb -ex 'file $(KERNEL_ELF)' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
 
 .PHONY: build env kernel clean run-inner switch-check gdbserver gdbclient
-

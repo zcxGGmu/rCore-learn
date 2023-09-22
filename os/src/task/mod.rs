@@ -1,6 +1,7 @@
 //! Implementation of TaskManager
 
 mod context;
+mod switch;
 
 #[allow(clippy::module_inception)]
 mod task;
@@ -10,6 +11,7 @@ use crate::loader::{get_num_app, init_app_cx};
 use crate::sync::UPSafeCell;
 use lazy_static::*;
 use task::{TaskControlBlock, TaskStatus};
+use switch::__switch;
 pub use context::TaskContext;
 
 /// TaskManager, where all the tasks are managed.
@@ -56,7 +58,7 @@ impl TaskManager {
         inner.tasks[current].task_status = TaskStatus::Ready;
     }
     
-    fn mark_current_exited(&self) -> {
+    fn mark_current_exited(&self) {
         let mut inner = self.inner.exclusive_access();
         let current = inner.current_task;
         inner.tasks[current].task_status = TaskStatus::Exited;
@@ -71,7 +73,7 @@ impl TaskManager {
         let current = inner.current_task;
         (current + 1..current + self.num_app + 1)
             .map(|id| id % self.num_app)
-            .find(|id| inner.tasks[id].task_status == TaskStatus::Ready)
+            .find(|id| inner.tasks[*id].task_status == TaskStatus::Ready)
     }
 
     /// Run first task in task list.
@@ -93,23 +95,25 @@ impl TaskManager {
 
     /// Core function of task switch
     fn run_next_task(&self) {
+        //println!("Enter run_next_task...");
         if let Some(next) = self.find_next_task() {
            
            // Update tasks status of TaskManager
            let mut inner = self.inner.exclusive_access();
            let current = inner.current_task;
-           inner.tasks[current].task_status = TaskStatus::Running;
+           inner.tasks[next].task_status = TaskStatus::Running;
            inner.current_task = next;
            
            // Implement task switch
            let current_task_cx_ptr =
                &mut inner.tasks[current].task_cx as *mut TaskContext;
            let next_task_cx_ptr =
-               &inner.tasks[current].task_cx as *const TaskContext;
+               &inner.tasks[next].task_cx as *const TaskContext;
            drop(inner);
            unsafe {
                __switch(current_task_cx_ptr, next_task_cx_ptr);
            }
+           // bbbbbback to user mode!
         } else { // All tasks completed
             println!("All applications completed!");
             

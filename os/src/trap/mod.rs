@@ -5,12 +5,11 @@ mod context;
 use core::arch::global_asm;
 use riscv::register::{
     mtvec::TrapMode,
-    scause::{self, Exception, Trap},
+    scause::{self, Exception, Interrupt ,Trap},
     sie, stval, stvec,
 };
-use crate::batch::run_next_app;
 use crate::syscall::syscall;
-use crate::task::{exit_current_and run_next,
+use crate::task::{exit_current_and_run_next,
                   suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use log::{*};
@@ -26,7 +25,7 @@ pub fn init() {
 }
 
 /// timer interrupt enabled
-pub fn enable_time_interrupt() {
+pub fn enable_timer_interrupt() {
     unsafe {
         sie::set_stimer();
     }
