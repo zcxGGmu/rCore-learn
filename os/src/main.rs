@@ -1,5 +1,6 @@
 //! The main module and as real kernel entrypoint
 
+#![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 #![no_main]
 #![no_std]
@@ -7,6 +8,7 @@
 
 use core::arch::global_asm;
 use log::{*};
+extern crate alloc;
 
 #[cfg(feature = "board_qemu")]
 #[path = "boards/qemu.rs"]
@@ -21,6 +23,7 @@ mod sbi;
 mod sync;
 mod loader;
 mod timer;
+mod mm;
 pub mod syscall;
 pub mod trap;
 pub mod task;
@@ -45,8 +48,10 @@ fn clear_bss() {
 pub fn rust_main() -> ! {
     clear_bss();
     logging::init();
+
     info!("[kernel] Hello, rCore!");
-    
+    mm::init();
+
     trap::init();
     loader::load_apps();
     trap::enable_timer_interrupt();
