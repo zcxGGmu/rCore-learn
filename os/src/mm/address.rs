@@ -1,13 +1,14 @@
 //! Type Switch of PA/VA/VPN/PPN
 
-use crate::config::{PAGE_SIZE, PAGE_SIZE_BITS};
+use crate::config::{PTE_NUM_PER_FRAME, PAGE_SIZE, PAGE_SIZE_BITS};
 use core::fmt::{self, Debug, Formatter};
+use super::PageTableEntry;
 
 /// SV39
 const PA_WIDTH_SV39: usize = 56;
 const VA_WIDTH_SV39: usize = 39;
-const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS;
-const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS;
+const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS; //44
+const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS; //27
 
 /// Defs of PA/VA/PPN/VPN
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -161,5 +162,32 @@ impl From<PhysAddr> for PhysPageNum {
 impl From<PhysPageNum> for PhysAddr {
     fn from(v: PhysPageNum) -> Self {
         Self(v.0 << PAGE_SIZE_BITS)
+    }
+}
+
+/// access real contents stored in physics memory space
+impl PhysPageNum {
+    // if current frame stores the PTE, the function is more convenient
+    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
+        let pa: PhysAddr = (*self).into();
+        unsafe {
+            core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, PTE_NUM_PER_FRAME)
+        }
+    }
+
+    // if you want to access the a frame only by u8 array
+    pub fn get_bytes_array(&self) -> &'static mut [u8] {
+        let pa: PhysAddr = (*self).into();
+        unsafe {
+            core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE)
+        }
+    } 
+
+    // if you want to access a frame by `T`
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        let pa: PhysAddr = (*self).into();
+        unsafe {
+            (pa.0 as *mut T).as_mut().unwrap()
+        }
     }
 }

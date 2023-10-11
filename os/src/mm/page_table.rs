@@ -1,9 +1,8 @@
 //! Implementation of PageTable/PageTableEntry
 
-use super::{PhysPageNum, VirtAddr, VirtPageNum};
+use super::PhysPageNum;
 use bitflags::*;
 
-const PTE_FLAG_BITS: usize = 8;
 const PTE_PPN_SHIFT: usize = 10;
 const PTE_PPN_BITS: usize = 44;
 
