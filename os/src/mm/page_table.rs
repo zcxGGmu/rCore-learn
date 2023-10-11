@@ -1,0 +1,66 @@
+//! Implementation of PageTable/PageTableEntry
+
+use super::{PhysPageNum, VirtAddr, VirtPageNum};
+use bitflags::*;
+
+const PTE_FLAG_BITS: usize = 8;
+const PTE_PPN_SHIFT: usize = 10;
+const PTE_PPN_BITS: usize = 44;
+
+bitflags! {
+    /// page table entry flags
+    pub struct PTEFlags: u8 {
+        const V = 1 << 0;
+        const R = 1 << 1;
+        const W = 1 << 2;
+        const X = 1 << 3;
+        const U = 1 << 4;
+        const G = 1 << 5;
+        const A = 1 << 6;
+        const D = 1 << 7;
+        
+    }
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+/// page table entry
+pub struct PageTableEntry {
+    pub bits: usize,
+}
+
+impl PageTableEntry {
+    pub fn new(ppn: PhysPageNum, flags: PTEFlags) -> Self {
+        PageTableEntry {
+            bits: ppn.0 << PTE_PPN_SHIFT | flags.bits as usize,
+        }
+    }
+
+    pub fn empty() -> Self {
+        PageTableEntry { bits: 0 }
+    }
+
+    pub fn ppn(&self) -> PhysPageNum {
+        (self.bits >> PTE_PPN_SHIFT & ((1usize << PTE_PPN_BITS) - 1)).into()
+    }
+    
+    pub fn flags(&self) -> PTEFlags {
+        PTEFlags::from_bits(self.bits as u8).unwrap()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        (self.flags() & PTEFlags::V) != PTEFlags::empty()
+    }
+    
+    pub fn readable(&self) -> bool {
+        (self.flags() & PTEFlags::R) != PTEFlags::empty()
+    }
+
+    pub fn writeable(&self) -> bool { 
+        (self.flags() & PTEFlags::W) != PTEFlags::empty()
+    }
+
+    pub fn executable(&self) -> bool {
+        (self.flags() & PTEFlags::X) != PTEFlags::empty()
+    }
+}
