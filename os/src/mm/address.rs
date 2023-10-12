@@ -4,11 +4,13 @@ use crate::config::{PTE_NUM_PER_FRAME, PAGE_SIZE, PAGE_SIZE_BITS};
 use core::fmt::{self, Debug, Formatter};
 use super::PageTableEntry;
 
-/// SV39
+// SV39
 const PA_WIDTH_SV39: usize = 56;
 const VA_WIDTH_SV39: usize = 39;
 const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS; //44
 const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS; //27
+const VPN_ONE_LEVEL_BITS: usize = 9;
+const VPN_ONE_LEVEL_MASK: usize = 511;
 
 /// Defs of PA/VA/PPN/VPN
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -189,5 +191,17 @@ impl PhysPageNum {
         unsafe {
             (pa.0 as *mut T).as_mut().unwrap()
         }
+    }
+}
+
+impl VirtPageNum {
+    pub fn indexes(&self) -> [usize; 3] {
+        let mut vpn = self.0;
+        let mut idx = [0usize; 3];
+        for i in (0..3).rev() {
+            idx[i] = vpn & VPN_ONE_LEVEL_MASK;
+            vpn >>= VPN_ONE_LEVEL_BITS;
+        }
+        idx
     }
 }
