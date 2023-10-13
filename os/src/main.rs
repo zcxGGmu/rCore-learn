@@ -5,10 +5,12 @@
 #![no_main]
 #![no_std]
 #![deny(warnings)]
+#![allow(unused)]
 
 use core::arch::global_asm;
 use log::{*};
 extern crate alloc;
+extern crate bitflags;
 
 #[cfg(feature = "board_qemu")]
 #[path = "boards/qemu.rs"]
@@ -51,6 +53,8 @@ pub fn rust_main() -> ! {
 
     info!("[kernel] Hello, rCore!");
     mm::init();
+    
+    mm::remap_test();
 
     trap::init();
     loader::load_apps();

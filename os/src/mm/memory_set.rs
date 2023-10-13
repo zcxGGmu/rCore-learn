@@ -1,4 +1,4 @@
-/*!
+/*
     Implementation of address space abstrct,
     it should contains some levels:
     MemorySet => Kernel/Application
@@ -11,15 +11,44 @@
             All virtual pages in the vpn_range is eventually 
             mapped onto the physical page frame.
 */
+
 use super::{frame_alloc, FrameTracker};
-use super::{PTEFlags, PageTable};
-use super::{PhysPageNum, VirtAddr, VirtPageNum};
+use super::{PTEFlags, PageTable, PageTableEntry};
+use super::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 use super::{StepByOne, VPNRange};
-use crate::config::PAGE_SIZE;
+use crate::config::{
+    PAGE_SIZE, MEMORY_END, TRAMPOLINE,
+    USER_STACK_SIZE, TRAP_CONTEXT
+};
 
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
-use bitflags::*;
+use bitflags::*; 
+use lazy_static::*;
+use alloc::sync::Arc;
+use crate::sync::UPSafeCell;
+use core::arch::asm;
+use riscv::register::satp;
+
+lazy_static! {
+    pub static ref KERNEL_SPACE: Arc<UPSafeCell<MemorySet>> =
+        Arc::new(unsafe {
+            UPSafeCell::new(MemorySet::new_kernel())
+    });
+}
+
+extern "C" {
+    fn stext();
+    fn etext();
+    fn srodata();
+    fn erodata();
+    fn sdata();
+    fn edata();
+    fn sbss_with_stack();
+    fn ebss();
+    fn ekernel();
+    fn strampoline();
+}
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MapType {
@@ -178,4 +207,212 @@ impl MemorySet {
            None
        ); 
     }
+
+    /// Mention that trampoline is not collected by areas
+    fn map_trampoline(&mut self) {
+        self.page_table.map(
+            VirtAddr::from(TRAMPOLINE).into(),
+            PhysAddr::from(strampoline as usize).into(),
+            PTEFlags::R | PTEFlags::X
+        );
+    }
+
+    /// create kernel address space
+    /// Kernel stack is not created here
+    pub fn new_kernel() -> Self {
+       let mut memory_set = Self::new_bare();
+       
+       /* high 256GiB */
+       memory_set.map_trampoline();
+
+       /* low 256GiB */
+       // map kernel sections 
+       println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+       println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+       println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+       println!(
+           ".bss [{:#x}, {:#x})",
+           sbss_with_stack as usize, ebss as usize
+       );
+       println!("mapping .text section");
+       memory_set.push(MapArea::new(
+               (stext as usize).into(),
+               (etext as usize).into(),
+               MapType::Identical,
+               MapPermission::R | MapPermission::X
+       ), None);
+
+       println!("mapping .rodata section");
+       memory_set.push(MapArea::new(
+               (srodata as usize).into(),
+               (erodata as usize).into(),
+               MapType::Identical,
+               MapPermission::R
+       ), None);
+
+       println!("mapping .data section");
+       memory_set.push(MapArea::new(
+               (sdata as usize).into(),
+               (edata as usize).into(),
+               MapType::Identical,
+               MapPermission::R | MapPermission::W
+       ), None);
+
+       println!("mapping .bss section");
+       memory_set.push(MapArea::new(
+               (sbss_with_stack as usize).into(),
+               (ebss as usize).into(),
+               MapType::Identical,
+               MapPermission::R | MapPermission::W
+       ), None);
+
+       // map available physical frames  
+       println!("mapping available physical frames");
+       memory_set.push(MapArea::new(
+               (ekernel as usize).into(),
+               (MEMORY_END as usize).into(),
+               MapType::Identical,
+               MapPermission::R | MapPermission::W
+       ), None);
+
+       // map MMIO registers
+       //TODO
+       
+       memory_set
+    }
+    
+    /// create application address space
+    /// Include sections in elf, trampoline, trap_context
+    /// also returns user_sp_base and entry point of each app
+    pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
+        let mut memory_set = Self::new_bare();
+        
+        /* 
+            map trampoline: 
+            trampoline of application and kernel mapped onto the same physical frame
+        */
+        memory_set.map_trampoline();
+        
+        // map program headers of elf, with U flags 
+        let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
+        let elf_header = elf.header;
+        let magic = elf_header.pt1.magic;
+        assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
+        let ph_count = elf_header.pt2.ph_count();
+        let mut max_end_vpn = VirtPageNum(0);
+        for i in 0..ph_count {
+            let ph = elf.program_header(i).unwrap();
+            if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+                let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
+                let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
+                let mut map_perm = MapPermission::U;
+                let ph_flags = ph.flags();
+                if ph_flags.is_read() {
+                    map_perm |= MapPermission::R;
+                }
+                if ph_flags.is_write() {
+                    map_perm |= MapPermission::W;
+                }
+                if ph_flags.is_execute() {
+                    map_perm |= MapPermission::X;
+                }
+                let map_area = MapArea::new(
+                    start_va,
+                    end_va,
+                    MapType::Framed,
+                    map_perm
+                );
+                max_end_vpn = map_area.vpn_range.get_end();
+                memory_set.push(
+                    map_area,
+                    Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize])
+                );
+            }
+        }
+        
+        // map user stack with U flags and guard page    
+        let max_end_va: VirtAddr = max_end_vpn.into();
+        let mut user_stack_bottom: usize = max_end_va.into();
+        let guard_page_size = PAGE_SIZE;
+        user_stack_bottom += guard_page_size;
+        let user_stack_top = user_stack_bottom + USER_STACK_SIZE;
+        memory_set.push(MapArea::new(
+                user_stack_bottom.into(),
+                user_stack_top.into(),
+                MapType::Framed,
+                MapPermission::R | MapPermission::W | MapPermission::U
+        ), None);
+
+        // map TrapContext 
+        memory_set.push(MapArea::new(
+                TRAP_CONTEXT.into(),
+                TRAMPOLINE.into(),
+                MapType::Framed,
+                MapPermission::R | MapPermission::W
+        ), None);
+        (memory_set, user_stack_top, elf.header.pt2.entry_point() as usize)
+    }
+
+    /*
+        We must ensure that the transition involving the `satp` CSR switch is a smooth one. 
+        By "smooth," we mean that the instructions for switching `satp` and the subsequent 
+        instruction are located at adjacent virtual addresses. While the physical addresses 
+        of these two instructions are generally adjacent as well, the address translation 
+        process they go through is different—changing `satp` leads to a lookup in a different 
+        multi-level page table. This requires that the mappings in the vicinity of the `satp` 
+        switch instructions, both before and after, have a certain sense of continuity.
+
+        Fortunately, we have achieved this. The instruction that writes to `satp` and the 
+        subsequent instruction are both located within the code segment of the kernel's 
+        memory layout. After the switch, these instructions constitute an identity mapping, 
+        and before the switch, they are considered to be fetching directly from physical 
+        addresses. This aligns perfectly with our expectations: even after switching the 
+        address space, instructions should be able to execute in a continuous manner.
+    */
+    pub fn activate(&self) {
+        let satp = self.page_table.token();
+        unsafe {
+            satp::write(satp);
+            asm!("sfence.vma");
+        }
+    }
+    
+    pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
+        self.page_table.translate(vpn)
+    }
+
+    //TODO
+}
+
+#[allow(unused)]
+pub fn remap_test() {
+    let mut kernel_space = KERNEL_SPACE.exclusive_access();
+    let mid_text: VirtAddr = ((stext as usize + etext as usize) >> 1).into();
+    let mid_rodata: VirtAddr = ((srodata as usize + erodata as usize) >> 1).into();
+    let mid_data: VirtAddr = ((sdata as usize + edata as usize) >> 1).into();
+    
+    println!("detect mid_text access permission...");
+    assert!(
+        !kernel_space
+        .translate(mid_text.floor())
+        .unwrap()
+        .writeable()
+    );
+
+    println!("detect mid_rodata access permission...");
+    assert!(
+        !kernel_space
+        .translate(mid_rodata.floor())
+        .unwrap()
+        .writeable()
+    );
+
+    println!("detect mid_data access permission...");
+    assert!(
+        !kernel_space
+        .translate(mid_data.floor())
+        .unwrap()
+        .executable()
+    );
+    println!("remap_test passed");
 }
