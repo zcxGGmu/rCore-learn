@@ -7,12 +7,15 @@ mod switch;
 mod task;
 
 use crate::config::MAX_APP_NUM;
-use crate::loader::{get_num_app, init_app_cx};
+use crate::loader::{get_num_app, get_app_data};
 use crate::sync::UPSafeCell;
+use crate::trap::TrapContext;
 use lazy_static::*;
 use task::{TaskControlBlock, TaskStatus};
 use switch::__switch;
 pub use context::TaskContext;
+
+use alloc::vec::Vec;
 
 /// TaskManager, where all the tasks are managed.
 ///
@@ -24,21 +27,24 @@ pub struct TaskManager {
 }
 
 pub struct TaskManagerInner {
-    tasks: [TaskControlBlock; MAX_APP_NUM],
+    tasks: Vec<TaskControlBlock>,
     current_task: usize,
 }
 
 lazy_static! {
     pub static ref TASK_MANAGER: TaskManager = {
+        println!("init TASK_MANAGER!");
         let num_app = get_num_app();
-        let mut tasks = [TaskControlBlock {
-            task_cx: TaskContext::zero_init(),
-            task_status: TaskStatus::UnInit,
-        }; MAX_APP_NUM];
-        for (i, task) in tasks.iter_mut().enumerate() {
-            task.task_cx = TaskContext::goto_restore(init_app_cx(i));
-            task.task_status = TaskStatus::Ready;
+        println!("current num_app = {}", num_app);
+        
+        let mut tasks: Vec<TaskControlBlock> = Vec::new();
+        for i in 0..num_app {
+            tasks.push(TaskControlBlock::new(
+                    get_app_data(i),
+                    i,
+            ));
         }
+
         TaskManager {
             num_app,
             inner: unsafe {
@@ -123,6 +129,26 @@ impl TaskManager {
             crate::board::QEMU_EXIT_HANDLE.exit_success();
         }
     }
+
+    /// Get the current task's token with the "Running" flag
+    fn get_current_token(&self) -> usize {
+        let inner = self.inner.exclusive_access();
+        inner.tasks[inner.current_task].get_user_token()
+    }
+ 
+    /// Get the current task's token with the "Running" flag
+    fn get_current_trap_cx(&self) -> &'static mut TrapContext {
+       let inner = self.inner.exclusive_access();
+       inner.tasks[inner.current_task].get_trap_cx()
+    }
+}
+
+pub fn current_user_token() -> usize {
+    TASK_MANAGER.get_current_token()
+}
+
+pub fn current_trap_cx() -> &'static mut TrapContext {
+    TASK_MANAGER.get_current_trap_cx()
 }
 
 pub fn run_first_task() {

@@ -20,6 +20,13 @@ pub const APP_SIZE_LIMIT:usize = 0x20000;
 pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;
 pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
 
+/// return (bottom, top) of a kernel stack for each application
+pub fn kernel_stack_position(app_id: usize) -> (usize, usize) {
+    let top = TRAMPOLINE - app_id * (KERNEL_STACK_SIZE + PAGE_SIZE);
+    let bottom = top - KERNEL_STACK_SIZE;
+    (bottom, top)
+}
+
 /*
 #[cfg(feature = "board_qemu")]
 pub const CLOCK_FREQ: usize = 12500000;
