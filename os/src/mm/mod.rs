@@ -14,6 +14,7 @@ pub use frame_allocator::{frame_alloc, FrameTracker};
 use page_table::PTEFlags;
 pub use page_table::{
     PageTable, PageTableEntry,
+    translated_byte_buffer
 };
 
 pub use memory_set::{MapPermission, MemorySet, KERNEL_SPACE};

@@ -1,6 +1,11 @@
 //! Implementation of PageTable/PageTableEntry
 
-use super::{frame_alloc, FrameTracker, PhysPageNum, PhysAddr, VirtAddr, VirtPageNum};
+use super::{
+    frame_alloc,
+    StepByOne,
+    FrameTracker, PhysPageNum, PhysAddr,
+    VirtAddr, VirtPageNum
+};
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::*;
@@ -178,4 +183,40 @@ impl PageTable {
             (aligned_pa_usize + offset).into()
         })
     }
+}
+
+/// translate a pointer to a mutable u8 Vec through page_table
+pub fn translated_byte_buffer(
+    token: usize,
+    ptr: *const u8,
+    len: usize,
+) -> Vec<&'static mut [u8]> {
+    let page_table_tmp = PageTable::from_token(token);
+    let mut start = ptr as usize;
+    let end = start + len;
+    
+    let mut v = Vec::new(); // the vector 
+    while start < end {
+        let start_va = VirtAddr::from(start);
+        let mut vpn = start_va.floor();
+        let ppn = page_table_tmp
+            .translate(vpn)
+            .unwrap()
+            .ppn();
+        
+        // copy by per page
+        vpn.step();
+        let mut end_va: VirtAddr = vpn.into();
+        end_va = end_va.min(VirtAddr::from(end));
+        if end_va.page_offset() == 0 {
+            // end aligned to page
+            v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..]); 
+        } else {
+            // end is not aligned to page
+            v.push(&mut ppn.get_bytes_array()
+                            [start_va.page_offset()..end_va.page_offset()]);
+        }
+        start = end_va.into();
+    }
+    v
 }
