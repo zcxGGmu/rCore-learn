@@ -1,11 +1,16 @@
 //! Implementation of TaskContext
 
+use crate::trap::trap_return;
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct TaskContext {
+    /// return address of `trap_return`
     ra: usize,
+    /// kernel stack of application
     sp: usize,
-    s: [usize; 12], // callee saved regs: s0~s11
+    /// callee save registers: s0~s11
+    s: [usize; 12],
 }
 
 impl TaskContext {
@@ -18,15 +23,12 @@ impl TaskContext {
         }
     }
 
-    /// set task context when task first run 
-    pub fn goto_restore(kstack_ptr: usize) -> Self {
-        extern "C" {
-            fn __restore();
-        }
+    /// set TaskContext
+    pub fn  goto_trap_return(kstack_ptr: usize) -> Self {
         Self {
-            ra: __restore as usize,
+            ra: trap_return as usize,
             sp: kstack_ptr,
             s: [0; 12],
         }
-    } 
+    }
 }
