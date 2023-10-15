@@ -123,9 +123,10 @@ impl TaskManager {
         } else { // All tasks completed
             println!("All applications completed!");
             
-            #[cfg(feature = "board_qemu")]
+            //#[cfg(feature = "board_qemu")]
             use crate::board::QEMUExit;
-            #[cfg(feature = "board_qemu")]
+            
+            //#[cfg(feature = "board_qemu")]
             crate::board::QEMU_EXIT_HANDLE.exit_success();
         }
     }

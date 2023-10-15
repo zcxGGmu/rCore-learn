@@ -67,7 +67,7 @@ __restore:
     sfence.vma
     
     # sscratch need to save *TrapContext before back to user
-    csrw sscratch a0
+    csrw sscratch, a0
 
     # now sp points to TrapContext in user space, start restoring based on it
     mv sp, a0
@@ -88,7 +88,7 @@ __restore:
     .endr
 
     # restore user_sp to sp register
-    ld sp, (2*8)sp
+    ld sp, 2*8(sp)
     
     # back to user
     sret

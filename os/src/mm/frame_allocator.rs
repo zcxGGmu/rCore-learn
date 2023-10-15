@@ -61,6 +61,21 @@ impl StackFrameAllocator {
         self.current = l.0;
         self.end = r.0;
     }
+
+    pub fn current1(&self) -> usize {
+        self.current
+    }
+
+    pub fn end1(&self) -> usize {
+        self.end
+    }
+
+    pub fn vec1(&self) {
+        for v in self.recycled.clone() {
+            println!("why");
+            println!("ppn = {}", v);
+        }
+    }
 }
 
 impl FrameAllocator for StackFrameAllocator {
@@ -85,12 +100,26 @@ impl FrameAllocator for StackFrameAllocator {
     
     fn dealloc(&mut self, ppn: PhysPageNum) {
        let ppn = ppn.0;
+
+       // validity check
+       /*
        if ppn >= self.current || self.recycled
            .iter()
            .find(|&v| {*v == ppn})
            .is_some() {
                panic!("Frame ppn={:#x} has not been allocated!", ppn);
        }
+       */
+       if ppn >= self.current || self.recycled.iter().any(|&v| v == ppn) {
+           panic!("Frame ppn={:#x} has not been allocated!", ppn);
+       }
+
+       //TODO frame that ppn points should be cleared here ???
+       let bytes_array = PhysPageNum::from(ppn).get_bytes_array();
+       for i in bytes_array {
+           *i = 0;
+       }
+
        self.recycled.push(ppn);
     }
 }
@@ -102,6 +131,18 @@ lazy_static! {
         unsafe {
             UPSafeCell::new(FrameAllocatorImpl::new())
         };
+}
+
+pub fn get_current() -> usize {
+    FRAME_ALLOCATOR.exclusive_access().current1()
+}
+
+pub fn get_end() -> usize {
+    FRAME_ALLOCATOR.exclusive_access().end1()
+}
+
+pub fn print_allocator_vec() {
+    FRAME_ALLOCATOR.exclusive_access().vec1();
 }
 
 /// initiate the frame allocator using [ekernel, MEMORY_END)
@@ -120,7 +161,7 @@ pub fn frame_alloc() -> Option<FrameTracker> {
     FRAME_ALLOCATOR
         .exclusive_access()
         .alloc()
-        .map(|ppn| FrameTracker::new(ppn))
+        .map(FrameTracker::new)
 }
 
 /// deallocate a frame

@@ -12,7 +12,7 @@ use log::{*};
 extern crate alloc;
 extern crate bitflags;
 
-#[cfg(feature = "board_qemu")]
+//#[cfg(not(any(feature = "board_k210")))]
 #[path = "boards/qemu.rs"]
 mod board;
 
@@ -33,6 +33,7 @@ pub mod task;
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
 
+/// clear .bss segment
 fn clear_bss() {
     extern "C" {
         fn sbss();
@@ -47,19 +48,43 @@ fn clear_bss() {
 }
 
 #[no_mangle]
+/// the entry point of rCore
 pub fn rust_main() -> ! {
     clear_bss();
     logging::init();
 
-    info!("[kernel] Hello, rCore!");
-    mm::init();
+    info!("[kernel] hello, rCore!");
     
-    mm::remap_test();
+    info!("------------------------------");
+    info!("------------------------------");
 
+    info!("[kernel] begin mm init...");
+    mm::init();
+    info!("[kernel] mm init completed!");
+    
+    info!("------------------------------");
+    info!("------------------------------");
+
+    info!("[kernel] begin remap_test...");
+    // mm::remap_test();
+
+    info!("------------------------------");
+    info!("------------------------------");
+
+    info!("[kernel] begin trap init...");
     trap::init();
-    loader::load_apps();
+    info!("[kernel] trap init completed!");
+
+    info!("------------------------------");
+    info!("------------------------------");
+
+    info!("[kernel] begin load apps...");
+
+    // loader::load_apps();
     trap::enable_timer_interrupt();
     timer::set_next_trigger();
+     
+    info!("[kernel] run first task...");
     task::run_first_task();
     panic!("Unreachable in rust_main!");
 }

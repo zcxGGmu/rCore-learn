@@ -1,6 +1,7 @@
 //! Implementation of PageTable/PageTableEntry
 
 use super::{
+    get_current, get_end, print_allocator_vec,
     frame_alloc,
     StepByOne,
     FrameTracker, PhysPageNum, PhysAddr,
@@ -49,7 +50,7 @@ pub struct PageTableEntry {
 impl PageTableEntry {
     pub fn new(ppn: PhysPageNum, flags: PTEFlags) -> Self {
         PageTableEntry {
-            bits: ppn.0 << PTE_PPN_SHIFT | flags.bits as usize,
+            bits: ppn.0 << 10 | flags.bits as usize,
         }
     }
 
@@ -58,7 +59,7 @@ impl PageTableEntry {
     }
 
     pub fn ppn(&self) -> PhysPageNum {
-        (self.bits >> PTE_PPN_SHIFT & ((1usize << PTE_PPN_BITS) - 1)).into()
+        (self.bits >> 10 & ((1usize << 44) - 1)).into()
     }
     
     pub fn flags(&self) -> PTEFlags {
@@ -152,13 +153,20 @@ impl PageTable {
 
     #[allow(unused)]
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
-       let pte = self.find_pte_create(vpn).unwrap();
-       assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
-       *pte = PageTableEntry::new(ppn, flags | PTEFlags::V);
+        //print_allocator_vec();
+        //println!("hello");
+        let pte = self.find_pte_create(vpn).unwrap();
+        //let ppn_pte: usize = PhysAddr::from(&(*pte) as usize).floor().into();
+        //println!("ppn_pte = {}", ppn_pte);
+        //print_allocator_vec();
+        //println!("hello");
+        assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
+        *pte = PageTableEntry::new(ppn, flags | PTEFlags::V);
     }
     
     #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
+        
         let pte = self.find_pte(vpn).unwrap();
         assert!(pte.is_valid(), "vpn {:?} is invalid before unmapping", vpn);
         *pte = PageTableEntry::empty();

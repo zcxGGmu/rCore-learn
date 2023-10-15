@@ -60,15 +60,14 @@ impl TaskControlBlock {
             kernel_stack_top.into(),
             MapPermission::R | MapPermission::W
         );
-        let task_cx = TaskContext::
-        
+
         let task_control_block = Self {
             task_status,
-            task_cx,
+            task_cx: TaskContext::goto_trap_return(kernel_stack_top),
             memory_set,
             trap_cx_ppn,
             base_size: user_sp,
-        }
+        };
 
         // prepare initial TrapContext in user space
         let trap_cx = task_control_block.get_trap_cx();

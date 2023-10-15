@@ -173,7 +173,7 @@ impl PhysPageNum {
     pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
         let pa: PhysAddr = (*self).into();
         unsafe {
-            core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, PTE_NUM_PER_FRAME)
+            core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, 512)
         }
     }
 
@@ -181,7 +181,7 @@ impl PhysPageNum {
     pub fn get_bytes_array(&self) -> &'static mut [u8] {
         let pa: PhysAddr = (*self).into();
         unsafe {
-            core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE)
+            core::slice::from_raw_parts_mut(pa.0 as *mut u8, 4096)
         }
     } 
 
@@ -199,8 +199,8 @@ impl VirtPageNum {
         let mut vpn = self.0;
         let mut idx = [0usize; 3];
         for i in (0..3).rev() {
-            idx[i] = vpn & VPN_ONE_LEVEL_MASK;
-            vpn >>= VPN_ONE_LEVEL_BITS;
+            idx[i] = vpn & 511;
+            vpn >>= 9;
         }
         idx
     }

@@ -1,6 +1,6 @@
 //! SBI call wrappers
 
-#![allow(unused)]
+//#![allow(unused)]
 
 use core::arch::asm;
 
@@ -37,11 +37,11 @@ pub fn console_putchar(c: usize) {
     sbi_call(SBI_CONSOLE_PUTCHAR, c, 0, 0);
 }
 
-#[cfg(feature = "board_qemu")]
+//#[cfg(feature = "board_qemu")]
 use crate::board::QEMUExit;
 /// use sbi call to shutdown the kernel
 pub fn shutdown() -> ! {
-    #[cfg(feature = "board_qemu")]
+    //#[cfg(feature = "board_qemu")]
    crate::board::QEMU_EXIT_HANDLE.exit_failure();
 }
 
