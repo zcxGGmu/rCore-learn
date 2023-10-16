@@ -6,7 +6,7 @@ mod switch;
 #[allow(clippy::module_inception)]
 mod task;
 
-use crate::config::MAX_APP_NUM;
+use crate::sbi::shutdown;
 use crate::loader::{get_num_app, get_app_data};
 use crate::sync::UPSafeCell;
 use crate::trap::TrapContext;
@@ -122,12 +122,7 @@ impl TaskManager {
            // bbbbbback to user mode!
         } else { // All tasks completed
             println!("All applications completed!");
-            
-            //#[cfg(feature = "board_qemu")]
-            use crate::board::QEMUExit;
-            
-            //#[cfg(feature = "board_qemu")]
-            crate::board::QEMU_EXIT_HANDLE.exit_success();
+            shutdown(false);
         }
     }
 

@@ -3,7 +3,7 @@
     .section .data
     .global _num_app
 _num_app:
-    .quad 7
+    .quad 9
     .quad app_0_start
     .quad app_1_start
     .quad app_2_start
@@ -11,7 +11,9 @@ _num_app:
     .quad app_4_start
     .quad app_5_start
     .quad app_6_start
-     .quad app_6_end
+    .quad app_7_start
+    .quad app_8_start
+     .quad app_8_end
 
     .section .data
     .global app_0_start
@@ -68,3 +70,19 @@ app_5_end:
 app_6_start:
     .incbin "../user/target/riscv64gc-unknown-none-elf/release/06sleep"
 app_6_end:
+
+    .section .data
+    .global app_7_start
+    .global app_7_end
+    .align 3
+app_7_start:
+    .incbin "../user/target/riscv64gc-unknown-none-elf/release/07load_fault"
+app_7_end:
+
+    .section .data
+    .global app_8_start
+    .global app_8_end
+    .align 3
+app_8_start:
+    .incbin "../user/target/riscv64gc-unknown-none-elf/release/08store_fault"
+app_8_end:

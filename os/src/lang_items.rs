@@ -16,5 +16,5 @@ fn panic(info: &PanicInfo) -> ! {
             info.message().unwrap()
         );
     }
-    shutdown()
+    shutdown(false)
 }
