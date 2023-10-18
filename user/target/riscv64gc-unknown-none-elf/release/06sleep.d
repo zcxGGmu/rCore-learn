@@ -1,1 +1,0 @@
-/home/zq/contents/objs/r-core/user/target/riscv64gc-unknown-none-elf/release/06sleep: /home/zq/contents/objs/r-core/user/src/bin/06sleep.rs /home/zq/contents/objs/r-core/user/src/console.rs /home/zq/contents/objs/r-core/user/src/lang_items.rs /home/zq/contents/objs/r-core/user/src/lib.rs /home/zq/contents/objs/r-core/user/src/syscall.rs
