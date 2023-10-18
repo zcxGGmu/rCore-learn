@@ -1,0 +1,14 @@
+/home/zq/contents/objs/r-core/os/target/riscv64gc-unknown-none-elf/debug/deps/libsbi_rt-130ceb9519ca1ab7.rmeta: /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/lib.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/binary.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/base.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/legacy.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/time.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/spi.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/rfnc.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/hsm.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/srst.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/pmu.rs
+
+/home/zq/contents/objs/r-core/os/target/riscv64gc-unknown-none-elf/debug/deps/sbi_rt-130ceb9519ca1ab7.d: /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/lib.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/binary.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/base.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/legacy.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/time.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/spi.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/rfnc.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/hsm.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/srst.rs /home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/pmu.rs
+
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/lib.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/binary.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/base.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/legacy.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/time.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/spi.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/rfnc.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/hsm.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/srst.rs:
+/home/zq/.cargo/registry/src/mirrors.ustc.edu.cn-61ef6e0cd06fb9b8/sbi-rt-0.0.2/src/pmu.rs:

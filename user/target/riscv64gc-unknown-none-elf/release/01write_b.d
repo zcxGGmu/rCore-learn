@@ -1,0 +1,1 @@
+/home/zq/contents/objs/r-core/user/target/riscv64gc-unknown-none-elf/release/01write_b: /home/zq/contents/objs/r-core/user/src/bin/01write_b.rs /home/zq/contents/objs/r-core/user/src/console.rs /home/zq/contents/objs/r-core/user/src/lang_items.rs /home/zq/contents/objs/r-core/user/src/lib.rs /home/zq/contents/objs/r-core/user/src/syscall.rs
