@@ -208,6 +208,23 @@ impl MemorySet {
        ); 
     }
 
+    /**
+        Remove `MapArea` that starts with start_vpn, two things need to do:
+        1) unmap `MapArea` va->pa
+        2) remove kernelstack area of KERNEL_SPACE.areas
+    */
+    pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
+       if let Some((idx, area)) = self
+           .areas
+           .iter_mut()
+           .enumerate()
+           .find(|(_, area)| area.vpn_range.get_start() == start_vpn)
+        {
+            area.unmap(&mut self.page_table);
+            self.areas.remove(idx);
+        }
+    }
+
     /// Mention that trampoline is not collected by areas
     fn map_trampoline(&mut self) {
         self.page_table.map(
