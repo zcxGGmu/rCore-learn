@@ -1,4 +1,4 @@
-//! Types related to task management
+//! Implementation of TaskControlBlock
 
 use super::TaskContext;
 use crate::config::{TRAP_CONTEXT, kernel_stack_position};
@@ -8,33 +8,69 @@ use crate::mm::{
 };
 use crate::trap::{trap_handler, TrapContext};
 
+use super::{pid_alloc, KernelStack, PidHandle};
+
+use crate::sync::UPSafeCell;
+use alloc::sync::{Arc, Weak};
+use alloc::vec::Vec;
+use core::cell::RefMut;
+
 #[derive(Copy, Clone, PartialEq)]
-/// task status: Uninit/Ready/Running/Exited
+/// task status: Ready/Running/Zombie
 pub enum TaskStatus {
-    UnInit,
     Ready,
     Running,
-    Exited,
+    Zombie,
 }
 
 /// task control core structure
 pub struct TaskControlBlock {
-    pub task_status: TaskStatus,
-    pub task_cx: TaskContext,
-    pub memory_set: MemorySet,
-    pub trap_cx_ppn: PhysPageNum,
-    pub base_size: usize,
+    // immutable
+    pub pid: PidHandle,
+    pub kernel_stack: KernelStack,
+    // mutable
+    inner: UPSafeCell<TaskControlBlockInner>,
 }
 
-impl TaskControlBlock {
-    /// direct access contents stored in frame that trap_cx_ppn ponits
+pub struct TaskControlBlockInner {
+    pub task_status: TaskStatus,
+    pub task_cx: TaskContext,
+    pub trap_cx_ppn: PhysPageNum,
+    pub memory_set: MemorySet,
+    pub base_size: usize,
+    pub parent: Option<Weak<TaskControlBlock>>,
+    pub children: Vec<Arc<TaskControlBlock>>,
+    pub exit_code: i32,
+}
+
+impl TaskControlBlockInner {
     pub fn get_trap_cx(&self) -> &'static mut TrapContext {
         self.trap_cx_ppn.get_mut()
     }
 
-    /// get user space satp
     pub fn get_user_token(&self) -> usize {
         self.memory_set.token()
+    }
+
+    fn get_status(&self) -> TaskStatus {
+        self.task_status
+    }
+
+    pub fn is_zombie(&self) -> bool {
+        self.get_status() == TaskStatus::Zombie
+    }
+}
+
+impl TaskControlBlock {
+    /// get inner of TaskControlBlock
+    pub fn inner_exclusive_access(&self) 
+        -> RefMut<'_, TaskControlBlockInner>
+    {
+        self.inner.exclusive_access()
+    }
+
+    pub fn getpid(&self) -> usize {
+        self.pid.0
     }
 
     /// create a new task control block
@@ -80,6 +116,12 @@ impl TaskControlBlock {
         );
         task_control_block
     }
-    
-}
 
+    pub fn fork(&self) -> Arc<TaskControlBlock> {
+        //TODO
+    }
+
+    pub fn exec(&self, elf_data: &[u8]) {
+        //TODO
+    }
+}
