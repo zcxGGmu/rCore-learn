@@ -1,5 +1,4 @@
 //! Implementation of TaskControlBlock
-
 use super::TaskContext;
 use crate::config::{TRAP_CONTEXT, kernel_stack_position};
 use crate::mm::{
@@ -74,45 +73,45 @@ impl TaskControlBlock {
     }
 
     /// create a new task control block
-    pub fn new(elf_data: &[u8], app_id: usize) -> Self {
-        let (memory_set, user_sp, entry_point)
-                            = MemorySet::from_elf(elf_data);
+    pub fn new(elf_data: &[u8]) -> Self {
+        // memory_set with elf program headers/trampoline/trap_context/user_stack
+        let (memory_set, user_sp, entry_point) = MemorySet::from_elf(elf_data);
         let trap_cx_ppn = memory_set
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
-        let task_status = TaskStatus::Ready;
 
-        /*
-            Build the kernel stack while creating the process
-            control block for the application and insert it
-            at the high 256GiB of the kernel address space
-            (after Trampoline).
-        */
-        let (kernel_stack_bottom, kernel_stack_top)
-                            = kernel_stack_position(app_id);
-        KERNEL_SPACE.exclusive_access().insert_framed_area(
-            kernel_stack_bottom.into(),
-            kernel_stack_top.into(),
-            MapPermission::R | MapPermission::W
-        );
-
+        // alloc a pid and a kernel stack in kernel space
+        let pid_handle = pid_alloc();
+        let kernel_stack = KernelStack::new(&pid_handle);
+        let kernel_stack_top = kernel_stack.get_top();
+        
+        // create task_control_block
         let task_control_block = Self {
-            task_status,
-            task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-            memory_set,
-            trap_cx_ppn,
-            base_size: user_sp,
+            pid: pid_handle,
+            kernel_stack,
+            inner: unsafe {
+              UPSafeCell::new(TaskControlBlockInner {
+                  task_status: TaskStatus::Ready,
+                  task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                  trap_cx_ppn,
+                  memory_set,
+                  base_size: user_sp,
+                  parent: None,
+                  children: Vec::new(),
+                  exit_code: 0,
+              })  
+            },
         };
 
-        // prepare initial TrapContext in user space
-        let trap_cx = task_control_block.get_trap_cx();
+        // prepare TrapContext in user space
+        let trap_cx = task_control_block.inner_exclusive_access().get_trap_cx();
         *trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
             KERNEL_SPACE.exclusive_access().token(),
             kernel_stack_top,
-            trap_handler as usize
+            trap_handler as usize,
         );
         task_control_block
     }
