@@ -61,11 +61,45 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
         .get_trap_cx()
 }
 
-/*  task schedule  */
+/*  task scheduling  */
 pub fn run_tasks() {
-    //TODO
+    loop {
+        let mut processor = PROCESSOR.exclusive_access();
+        if let Some(task) = fetch_task() {
+            let idle_task_cx_ptr = processor.get_idle_task_cx_ptr();
+            
+            let mut task_inner = task.inner_exclusive_access();
+            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            task_inner.task_status = TaskStatus::Running;
+            drop(task_inner);
+            
+            processor.current = Some(task);
+            drop(processor);
+
+            // swicth to next_task
+            unsafe {
+                __switch(
+                    idle_task_cx_ptr,
+                    next_task_cx_ptr
+                );
+            };
+        }
+    }
 }
 
 pub fn schedule(switched_task_cx_ptr: *mut TaskContext) {
-    //TODO
+    let mut processor = PROCESSOR.exclusive_access();
+    let idle_task_cx_ptr = processor.get_idle_task_cx_ptr();
+    drop(processor);
+
+    /* 
+        switch to idle control flow,
+        the specific scheduling details are not concerned here.
+    */
+    unsafe {
+        __switch(
+            switched_task_cx_ptr,
+            idle_task_cx_ptr,
+        );
+    }
 }

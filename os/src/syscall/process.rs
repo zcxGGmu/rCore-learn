@@ -2,8 +2,10 @@
 
 use log::{*};
 
-use crate::task::{exit_current_and_run_next,
-                  suspend_current_and_run_next};
+use crate::task::{
+    exit_current_and_run_next,              
+    suspend_current_and_run_next
+};
 use crate::timer::get_time_ms;
 
 /// task exits and sbumit an exit code
