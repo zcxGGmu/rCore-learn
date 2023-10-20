@@ -116,8 +116,46 @@ impl TaskControlBlock {
         task_control_block
     }
 
-    pub fn fork(&self) -> Arc<TaskControlBlock> {
-        //TODO
+    pub fn fork(self: &Arc<Self>) -> Arc<TaskControlBlock> {
+        let mut parent_inner = self.inner_exclusive_access();
+        // copy user space
+        let memory_set = MemorySet::from_existed_user(&parent_inner.memory_set);
+        let trap_cx_ppn = memory_set
+            .translate(VirtAddr::from(TRAP_CONTEXT).into())
+            .unwrap()
+            .ppn();
+        // alloc a pid and kernel_stack
+        let pid_handle = pid_alloc();
+        let kernel_stack = KernelStack::new(&pid_handle);
+        let kernel_stack_top = kernel_stack.get_top();
+        // create task_control_block
+        let task_control_block = Arc::new(
+            TaskControlBlock {
+               pid: pid_handle,
+               kernel_stack,
+               inner: unsafe {
+                   UPSafeCell::new(
+                       TaskControlBlockInner {
+                           task_status: TaskStatus::Ready,
+                           task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                           trap_cx_ppn,
+                           memory_set,
+                           base_size: parent_inner.base_size,
+                           parent: Some(Arc::downgrade(self)),
+                           children: Vec::new(),
+                           exit_code: 0,
+                       }
+                   )
+               },
+            }
+        );
+        // add child
+        parent_inner.children.push(task_control_block.clone());
+        // modify kernel_sp in trap_cx
+        let trap_cx = task_control_block.inner_exclusive_access().get_trap_cx();
+        trap_cx.kernel_sp = kernel_stack_top;
+
+        task_control_block
     }
 
     pub fn exec(&self, elf_data: &[u8]) {
