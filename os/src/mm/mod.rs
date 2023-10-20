@@ -17,7 +17,8 @@ pub use frame_allocator::{
 use page_table::PTEFlags;
 pub use page_table::{
     PageTable, PageTableEntry,
-    translated_byte_buffer
+    translated_byte_buffer,
+    translated_str,
 };
 
 pub use memory_set::{MapPermission, MemorySet, KERNEL_SPACE};

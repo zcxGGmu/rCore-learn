@@ -49,6 +49,6 @@ pub fn suspend_current_and_run_next() {
 }
 
 /// exit the current 'Running' task and run the next task in task_queue
-pub fn exit_current_and_run_next() {
+pub fn exit_current_and_run_next(exit_code: i32) {
     //TODO
 }

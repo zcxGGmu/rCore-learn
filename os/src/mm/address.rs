@@ -167,6 +167,15 @@ impl From<PhysPageNum> for PhysAddr {
     }
 }
 
+impl PhysAddr {
+    /// get mutable reference to `PhysAddr` value
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        unsafe {
+            (self.0 as *mut T).as_mut().unwrap() 
+        }
+    }
+}
+
 /// access real contents stored in physics memory space
 impl PhysPageNum {
     // if current frame stores the PTE, the function is more convenient
@@ -188,9 +197,7 @@ impl PhysPageNum {
     // if you want to access a frame by `T`
     pub fn get_mut<T>(&self) -> &'static mut T {
         let pa: PhysAddr = (*self).into();
-        unsafe {
-            (pa.0 as *mut T).as_mut().unwrap()
-        }
+        pa.get_mut()
     }
 }
 

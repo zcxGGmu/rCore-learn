@@ -1,5 +1,4 @@
 //! Implementation of PageTable/PageTableEntry
-
 use super::{
     get_current, get_end, print_allocator_vec,
     frame_alloc,
@@ -10,6 +9,7 @@ use super::{
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::*;
+use alloc::string::String;
 
 // PTE
 const PTE_PPN_SHIFT: usize      = 10;
@@ -227,4 +227,23 @@ pub fn translated_byte_buffer(
         start = end_va.into();
     }
     v
+}
+
+pub fn translated_str(token: usize, ptr: *const u8) -> String {
+   let page_table = PageTable::from_token(token);
+   let mut string = String::new();
+   let mut va = ptr as usize;
+   loop {
+       let ch: u8 = *(page_table
+            .translate_va(VirtAddr::from(va))
+            .unwrap()
+            .get_mut());
+       if ch == 0 {
+           break;
+       } else {
+           string.push(ch as char);
+           va += 1;
+       }
+   }
+   string
 }

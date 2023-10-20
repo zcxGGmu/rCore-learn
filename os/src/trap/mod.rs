@@ -1,5 +1,4 @@
 //! Implementation of trap handling
-
 mod context;
 
 use core::arch::{asm, global_asm};
@@ -96,10 +95,9 @@ pub fn trap_return() -> ! {
 #[no_mangle]
 pub fn trap_handler() -> ! {
     set_kernel_trap_entry();
-    let cx = current_trap_cx();
     let scause = scause::read();
     let stval = stval::read();
-    
+    // syscall distribute 
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
             // jump to next instruction
@@ -111,19 +109,25 @@ pub fn trap_handler() -> ! {
             cx = current_trap_cx();
             cx.x[10] = result as usize;
         }
+        Trap::Exception(Exception::InstructionFault) |
+        Trap::Exception(Exception::InstructionPageFault) |
         Trap::Exception(Exception::StoreFault) |
         Trap::Exception(Exception::StorePageFault) |
         Trap::Exception(Exception::LoadFault) |
         Trap::Exception(Exception::LoadPageFault) => {
-            error!("[kernel] PageFault in application,  
-                   addr_bad = {:#x}, instruction_bad = {:#x}, 
-                   kernel killed it.", stval, cx.sepc);
-            exit_current_and_run_next();
+            error!("[kernel] {:?} in application,
+                   addr_bad = {:#x}, instruction_bad = {:#x},
+                   kernel killed it.",
+                   scause.cause(),
+                   stval,
+                   current_trap_cx().sepc,
+            );
+            exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             error!("[kernel] IllegalInstruction in application,
                    kernel killed it!");
-            exit_current_and_run_next();
+            exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
