@@ -50,5 +50,28 @@ pub fn suspend_current_and_run_next() {
 
 /// exit the current 'Running' task and run the next task in task_queue
 pub fn exit_current_and_run_next(exit_code: i32) {
-    //TODO
+    let task = take_current_task().unwrap();
+    let mut inner = task.inner_exclusive_access();
+    inner.task_status = TaskStatus::Zombie;
+    inner.exit_code = exit_code;
+    
+    // under initproc
+    {
+       let mut initproc_inner = INITPROC.inner_exclusive_access();
+       for child in inner.children.iter() {
+           child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));
+           initproc_inner.children.push(child.clone());
+       }
+    }
+
+    inner.children.clear();
+    inner.memory_set.recycle_data_pages();
+
+    drop(inner);
+    // drop task manually to maintain rc correctly
+    drop(task);
+    
+    // we do not save task context
+    let mut _unused =TaskContext::zero_init();
+    schedule(&mut _unused as *mut _);
 }

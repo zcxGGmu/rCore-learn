@@ -122,11 +122,13 @@ pub fn trap_handler() -> ! {
                    stval,
                    current_trap_cx().sepc,
             );
+            // page fault exit code
             exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             error!("[kernel] IllegalInstruction in application,
                    kernel killed it!");
+            // illegal instruction exit code
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
