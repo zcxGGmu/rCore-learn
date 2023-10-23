@@ -1,5 +1,4 @@
 //! The main module and as real kernel entrypoint
-
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 #![no_main]
@@ -61,12 +60,14 @@ pub fn rust_main() -> ! {
     info!("[kernel] begin mm init...");
     mm::init();
     info!("[kernel] mm init completed!");
-    
+    task::add_initproc();
+    info!("[kernel] after initproc!");
+
     info!("------------------------------");
     info!("------------------------------");
 
     info!("[kernel] begin remap_test...");
-    // mm::remap_test();
+    mm::remap_test();
 
     info!("------------------------------");
     info!("------------------------------");
@@ -80,11 +81,12 @@ pub fn rust_main() -> ! {
 
     info!("[kernel] begin load apps...");
 
-    // loader::load_apps();
     trap::enable_timer_interrupt();
     timer::set_next_trigger();
      
     info!("[kernel] run first task...");
-    task::run_first_task();
+    loader::list_apps();
+    task::run_tasks();
+
     panic!("Unreachable in rust_main!");
 }
