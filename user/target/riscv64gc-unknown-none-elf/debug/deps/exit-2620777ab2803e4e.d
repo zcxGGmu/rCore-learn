@@ -1,5 +1,0 @@
-/home/ubuntu/contents/rCore-learn/user/target/riscv64gc-unknown-none-elf/debug/deps/libexit-2620777ab2803e4e.rmeta: src/bin/exit.rs
-
-/home/ubuntu/contents/rCore-learn/user/target/riscv64gc-unknown-none-elf/debug/deps/exit-2620777ab2803e4e.d: src/bin/exit.rs
-
-src/bin/exit.rs:
