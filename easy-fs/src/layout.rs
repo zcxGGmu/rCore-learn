@@ -402,5 +402,57 @@ impl DiskInode {
 }
 
 /// Directory entry
+#[repr(C)]
+pub struct DirEntry {
+    name: [u8; NAME_LENGTH_LIMIT + 1],
+    inode_number: u32,
+}
+/// Size of a directory entry
+pub const DIRECT_SZ: usize = 32;
 
-//TODO
+impl DirEntry {
+    /// create a empty directory entry
+    pub fn empty() -> Self {
+        Self {
+            name: [0u8; NAME_LENGTH_LIMIT + 1],
+            inode_number: 0,
+        }
+    }
+    /// create a new directory entry from name and inode_number
+    pub fn new(name: &str, inode_number: u32) -> Self {
+        let mut bytes = [0u8; NAME_LENGTH_LIMIT + 1];
+        bytes[..name.len()].copy_from_slice(name.as_bytes());
+        Self {
+            name: bytes,
+            inode_number,
+        }
+    }
+    
+    pub fn name(&self) -> &str {
+        // get the real length of name_str
+        let len = (0usize..).find(|i| self.name[*i] == 0).unwrap();
+        core::str::from_utf8(&self.name[..len]).unwrap();
+    }
+
+    pub fn inode_number(&self) -> u32 {
+        self.inode_number
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            core::slice::from_raw_parts(
+                self as *const _ as usize as *const u8,
+                DIRECT_SZ
+            )
+        }
+    }
+
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        unsafe {
+            core::slice::from_raw_parts(
+                self as *mut _ as usize as *mut u8,
+                DIRECT_SZ
+            )
+        }
+    }
+}

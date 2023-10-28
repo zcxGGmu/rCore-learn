@@ -1,0 +1,19 @@
+cargo:rerun-if-changed=../user/src/
+cargo:rerun-if-changed=../user/target/riscv64gc-unknown-none-elf/release/
+app_0: exit
+app_1: fantastic_text
+app_2: forkexec
+app_3: forktest
+app_4: forktest2
+app_5: forktest_simple
+app_6: forktree
+app_7: hello_world
+app_8: initproc
+app_9: matrix
+app_10: sleep
+app_11: sleep_simple
+app_12: stack_overflow
+app_13: user_shell
+app_14: usertests
+app_15: usertests-simple
+app_16: yield
